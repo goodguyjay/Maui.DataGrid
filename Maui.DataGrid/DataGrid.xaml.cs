@@ -62,6 +62,12 @@ public partial class DataGrid
         BindablePropertyExtensions.Create<DataGrid, Color>(Colors.White);
 
     /// <summary>
+    /// Gets or sets the text color of the footer.
+    /// </summary>
+    public static readonly BindableProperty FooterTextColorProperty =
+        BindablePropertyExtensions.Create<DataGrid, Color>(Colors.Black);
+
+    /// <summary>
     /// Gets or sets the color of the border.
     /// </summary>
     public static readonly BindableProperty BorderColorProperty =
@@ -94,7 +100,7 @@ public partial class DataGrid
     /// </summary>
     public static readonly BindableProperty RowsBackgroundColorPaletteProperty =
         BindablePropertyExtensions.Create<DataGrid, IColorProvider>(
-            defaultValue: new PaletteCollection { Colors.White },
+            defaultValueCreator: _ => new PaletteCollection { Colors.White },
             propertyChanged: (b, _, _) =>
             {
                 if (b is DataGrid self)
@@ -108,7 +114,7 @@ public partial class DataGrid
     /// </summary>
     public static readonly BindableProperty RowsTextColorPaletteProperty =
         BindablePropertyExtensions.Create<DataGrid, IColorProvider>(
-            defaultValue: new PaletteCollection { Colors.Black },
+            defaultValueCreator: _ => new PaletteCollection { Colors.Black },
             propertyChanged: (b, _, _) =>
             {
                 if (b is DataGrid self)
@@ -122,7 +128,7 @@ public partial class DataGrid
     /// </summary>
     public static readonly BindableProperty ColumnsProperty =
         BindablePropertyExtensions.Create<DataGrid, ObservableCollection<DataGridColumn>>(
-            defaultValue: [],
+            defaultValueCreator: _ => [],  // Note: defaultValueCreator needed to prevent errors during navigation
             propertyChanged: (b, o, n) =>
             {
                 if (b is not DataGrid self)
@@ -151,8 +157,7 @@ public partial class DataGrid
                 }
 
                 self.Initialize();
-            },
-            defaultValueCreator: _ => []); // Note: defaultValueCreator needed to prevent errors during navigation
+            });
 
     /// <summary>
     /// Gets or sets the ItemsSource for the DataGrid.
@@ -262,7 +267,7 @@ public partial class DataGrid
     /// </summary>
     public static readonly BindableProperty PageSizeListProperty =
         BindablePropertyExtensions.Create<DataGrid, IList<int>>(
-            defaultValue: DefaultPageSizeList,
+            defaultValueCreator: _ => [.. DefaultPageSizeSet!],
             propertyChanged: (b, _, _) =>
             {
                 if (b is DataGrid self)
@@ -381,8 +386,8 @@ public partial class DataGrid
     /// </summary>
     public static readonly BindableProperty SelectedItemsProperty =
         BindablePropertyExtensions.Create<DataGrid, IList<object>>(
-            defaultValue: [],
-            BindingMode.TwoWay,
+            defaultBindingMode: BindingMode.TwoWay,
+            defaultValueCreator: _ => [],
             propertyChanged: (b, _, n) =>
             {
                 var self = (DataGrid)b;
@@ -647,7 +652,14 @@ public partial class DataGrid
                 {
                     foreach (var column in self.Columns)
                     {
-                        column.SortingIcon.Style = n;
+                        if (n is null)
+                        {
+                            column.SortingIcon.Style = self.DefaultSortIconStyle;
+                        }
+                        else
+                        {
+                            column.SortingIcon.Style = n;
+                        }
                     }
                 }
             });
@@ -666,7 +678,6 @@ public partial class DataGrid
             });
 
     private static readonly SortedSet<int> DefaultPageSizeSet = [5, 10, 50, 100, 200, 1000];
-    private static readonly IList<int> DefaultPageSizeList = [.. DefaultPageSizeSet];
 
     private readonly WeakEventManager _itemSelectedEventManager = new();
     private readonly WeakEventManager _refreshingEventManager = new();
@@ -675,8 +686,13 @@ public partial class DataGrid
 
     private readonly SortedSet<int> _pageSizeList = new(DefaultPageSizeSet);
 
+#if NET9_0
+    private readonly Lock _reloadLock = new();
+    private readonly Lock _sortAndPaginateLock = new();
+#else
     private readonly object _reloadLock = new();
     private readonly object _sortAndPaginateLock = new();
+#endif
     private DataGridColumn? _sortedColumn;
     private HashSet<object>? _internalItemsHashSet;
 
@@ -765,6 +781,16 @@ public partial class DataGrid
     {
         get => (Color)GetValue(FooterBackgroundProperty);
         set => SetValue(FooterBackgroundProperty, value);
+    }
+
+    /// <summary>
+    /// Gets or sets textColor of the footer that contains pagination elements
+    /// Default value is <see cref="Colors.Black"/>.
+    /// </summary>
+    public Color FooterTextColor
+    {
+        get => (Color)GetValue(FooterTextColorProperty);
+        set => SetValue(FooterTextColorProperty, value);
     }
 
     /// <summary>
@@ -1477,26 +1503,23 @@ public partial class DataGrid
         return filteredItems.ToList();
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2074", Justification = "Reflection is needed here.")]
     private bool FilterItem(object item, DataGridColumn column)
     {
         try
         {
             var isItemTypeCached = _cachedType != null;
 
-            if (!isItemTypeCached)
-            {
-                _cachedType = item.GetType();
-            }
+            _cachedType ??= item.GetType();
 
-            var type = _cachedType ?? item.GetType();
-            var property = type?.GetProperty(column.PropertyName);
+            var property = _cachedType.GetProperty(column.PropertyName);
 
-            if (property?.PropertyType == typeof(object))
+            if (property == null || property.PropertyType == typeof(object))
             {
                 return false;
             }
 
-            var value = property?.GetValue(item, null)?.ToString();
+            var value = property.GetValue(item, null)?.ToString();
             var result = value?.Contains(column.FilterText, StringComparison.OrdinalIgnoreCase);
 
             if (result == null && isItemTypeCached)

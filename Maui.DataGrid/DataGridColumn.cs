@@ -167,7 +167,17 @@ public sealed class DataGridColumn : BindableObject, IDefinition
             {
                 if (b is DataGridColumn self && self.HeaderLabel != null)
                 {
-                    self.HeaderLabel.Style = n;
+                    if (n is null)
+                    {
+                        if (self.DataGrid is not null)
+                        {
+                            self.HeaderLabel.Style = self.DataGrid.DefaultHeaderLabelStyle;
+                        }
+                    }
+                    else
+                    {
+                        self.HeaderLabel.Style = n;
+                    }
                 }
             });
 
@@ -180,7 +190,17 @@ public sealed class DataGridColumn : BindableObject, IDefinition
             {
                 if (b is DataGridColumn self)
                 {
-                    self.FilterTextbox.Style = n;
+                    if (n is null)
+                    {
+                        if (self.DataGrid is not null)
+                        {
+                            self.FilterTextbox.Style = self.DataGrid.DefaultHeaderFilterStyle;
+                        }
+                    }
+                    else
+                    {
+                        self.FilterTextbox.Style = n;
+                    }
                 }
             });
 
@@ -213,7 +233,11 @@ public sealed class DataGridColumn : BindableObject, IDefinition
 
         FilterTextboxContainer = new ContentView();
 
+#if NET9_0_OR_GREATER
+        FilterTextbox.SetBinding(Entry.TextProperty, BindingBase.Create<DataGridColumn, string>(static x => x.FilterText, BindingMode.TwoWay, source: this));
+#else
         FilterTextbox.SetBinding(Entry.TextProperty, new Binding(nameof(FilterText), BindingMode.TwoWay, source: this));
+#endif
     }
 
     #region Events
@@ -458,6 +482,7 @@ public sealed class DataGridColumn : BindableObject, IDefinition
         return _isSortable ??= false;
     }
 
+    [UnconditionalSuppressMessage("Trimming", "IL2072", Justification = "Reflection is needed here.")]
     [UnconditionalSuppressMessage("Trimming", "IL2062", Justification = "Reflection is needed here.")]
     internal void InitializeDataType()
     {

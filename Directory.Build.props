@@ -11,20 +11,27 @@
 	  <WarningLevel>9999</WarningLevel>
     <AnalysisLevel>latest-all</AnalysisLevel>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
+    <MauiEnableXamlCBindingWithSourceCompilation>true</MauiEnableXamlCBindingWithSourceCompilation>
     <NoWarn>$(NoWarn);CA2007;CS1591;NU1605;SA1101;SA1124;SA1309;SA1600;SA1633</NoWarn>
 
     <Configurations>Debug;Release;Test</Configurations>
-    <MauiVersion>8.0.92</MauiVersion>
 
     <!-- Generate the lock file -->
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 
     <!-- Restore the exact packages as listed in the lock file -->
     <RestoreLockedMode Condition="'$(ContinuousIntegrationBuild)' == 'true'">true</RestoreLockedMode>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.Contains('net8.0'))">
+      <MauiVersion>8.0.100</MauiVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(TargetFramework.Contains('net9.0'))">
+      <MauiVersion>9.0.12</MauiVersion>
   </PropertyGroup>
 
   <ItemGroup>

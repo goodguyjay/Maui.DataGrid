@@ -21,7 +21,7 @@
                      BorderColor="{StaticResource GridBorderColor}" BorderThickness="{Binding BorderThickness}"
                      HeaderBackground="{StaticResource GridHeaderBgColor}" HeaderBordersVisible="{Binding HeaderBordersVisible}"
                      BackgroundColor="{StaticResource GridBgColor}" ActiveRowColor="{StaticResource ActiveRowColor}"
-                     FooterBackground="{StaticResource GridFooterBgColor}" SortedColumnIndex="1"
+                     FooterBackground="{StaticResource GridFooterBgColor}" FooterTextColor="{StaticResource GridFooterTextColor}" SortedColumnIndex="1"
                      PaginationEnabled="{Binding PaginationEnabled}" PageSize="{Binding PageSize}" PageText="{Binding PaginationText}" PerPageText="{Binding PerPageText}"
                      PullToRefreshCommand="{Binding Commands[Refresh]}" IsRefreshing="{Binding IsRefreshing}"
                      RowHeight="70" HeaderHeight="75" x:Name="_dataGrid1"
@@ -61,12 +61,12 @@
                 <dg:DataGridColumn PropertyName="." Width="0.75*" FilteringEnabled="False">
                     <dg:DataGridColumn.CellTemplate>
                         <DataTemplate x:DataType="m:Team">
-                            <Button Text="Edit" BackgroundColor="LightSkyBlue" Command="{Binding BindingContext.Commands[Edit], Source={Reference self}, x:DataType={x:Null}}" CommandParameter="{Binding .}" />
+                            <Button Text="Edit" BackgroundColor="LightSkyBlue" Command="{Binding Commands[Edit], Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:MainViewModel}}, x:DataType={x:Type vm:MainViewModel}}" CommandParameter="{Binding .}" />
                         </DataTemplate>
                     </dg:DataGridColumn.CellTemplate>
                     <dg:DataGridColumn.EditCellTemplate>
                         <DataTemplate x:DataType="m:Team">
-                            <Button Text="Done" BackgroundColor="MediumSeaGreen" Command="{Binding BindingContext.Commands[CompleteEdit], Source={Reference self}, x:DataType={x:Null}}" CommandParameter="{Binding .}" />
+                            <Button Text="Done" BackgroundColor="MediumSeaGreen" Command="{Binding Commands[CompleteEdit], Source={RelativeSource Mode=FindAncestorBindingContext, AncestorType={x:Type vm:MainViewModel}}, x:DataType={x:Type vm:MainViewModel}}" CommandParameter="{Binding .}" />
                         </DataTemplate>
                     </dg:DataGridColumn.EditCellTemplate>
                 </dg:DataGridColumn>
